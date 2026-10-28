@@ -194,5 +194,7 @@
 	"instanceAi.welcomeModal.gateway.instructions.windows": "ターミナルを開き（Windows キーを押して「Terminal」と入力）、下のコマンドを貼り付けてください。",
 	"instanceAi.welcomeModal.gateway.instructions.linux": "ターミナルを開き、下のコマンドを貼り付けてください。",
 	"instanceAi.welcomeModal.gateway.tokenExpiresIn": "トークンの有効期限まで残り {minutes} 分",
-	"instanceAi.welcomeModal.gateway.tokenExpired": "トークンの有効期限が切れました。コマンドをもう一度コピーしてください。"
+	"instanceAi.welcomeModal.gateway.tokenExpired": "トークンの有効期限が切れました。コマンドをもう一度コピーしてください。",
+	"settings.personal.language": "言語",
+	"settings.personal.language.description": "このブラウザでの表示言語です。変更するとページを再読み込みします。"
 }
