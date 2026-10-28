@@ -1,78 +1,68 @@
 # n8n 日本語化
 
-n8n の画面（editor-ui）を日本語にするための設定とパッチです。
+n8n の画面（editor-ui）を日本語にするための差分・翻訳・ビルド手順です。対象は **n8n 2.45.4** です。
 
-- ベースは [Tomatio13/n8n-i18n-japanese](https://github.com/Tomatio13/n8n-i18n-japanese) のリリース（日本語版 editor-ui）です。
-- `i18n/ja-extra.json` で、足りない訳を追加・上書きします。
+- n8n 本体は含みません。ビルド済みファイルも配布しません。
+- 公式リポジトリから n8n のソースを取得し、自分の環境で日本語化した editor-ui をビルドします。
 - 個人設定の「パーソナライズ」に言語の選択欄（日本語 / English）を追加します。選んだ言語はブラウザごとに保存されます。
 
 ## 構成
 
 | パス | 内容 |
 | --- | --- |
-| `compose.yml` | ローカル用の n8n（Podman / Docker Compose） |
-| `i18n/ja-extra.json` | 追加の訳（キーは n8n の `en.json` と同じ） |
-| `scripts/build.mjs` | リリースを取得し、パッチを当てて `editor-ui-ja/` を作る |
-| `scripts/patches.mjs` | パッチの中身 |
+| `locales/ja.json` | 追加の訳（キーは n8n の `en.json` と同じ） |
+| `patches/n8n@2.45.4/ja-locale.patch` | n8n のソースに当てる差分 |
+| `scripts/build-editor-ui.sh` | ソースの取得からビルド、配置まで |
+| `scripts/apply-to-vps.md` | VPS への適用手順 |
+| `LICENSE-NOTES.md` | ライセンスに関する注意 |
 
-`editor-ui-ja/` はビルドで作るため、リポジトリには含めません。
+訳の大部分は [Tomatio13/n8n-i18n-japanese](https://github.com/Tomatio13/n8n-i18n-japanese) の `ja.json` を使います。ビルド時に固定したコミットから取得し、`locales/ja.json` の訳を上に重ねます。
 
-## 使い方
+パッチの内容は次の 3 つです。
+
+- 日本語ロケール（`ja.json`）を必要なときに読み込む
+- ブラウザに保存した言語を、サーバーの既定（`N8N_DEFAULT_LOCALE`）より優先する
+- 個人設定に言語の選択欄を追加する
+
+## VPS でビルドして適用する
+
+必要なもの：git、curl、Node.js 24 以上（corepack を含む）、メモリ 8GB 程度。
 
 ```sh
-node scripts/build.mjs        # editor-ui-ja/ を作成（Node.js 18 以上）
-podman compose up -d          # 初回
-podman restart n8n-local      # 2 回目以降（訳やパッチを変えたとき）
+sudo git clone https://github.com/iyken-21/n8n-ja.git /opt/n8n-ja
+sudo /opt/n8n-ja/scripts/build-editor-ui.sh 2.45.4
 ```
 
-n8n は起動時に editor-ui をコピーして使うため、`editor-ui-ja/` を作り直したら再起動が必要です。
+成果物は `/var/www/n8n/editor-ui-ja` に置かれます。Docker Compose でマウントし、`.env` に `N8N_DEFAULT_LOCALE=ja` を追加して再起動します。
 
-## サーバーに適用する
+```yaml
+volumes:
+  - /var/www/n8n/editor-ui-ja:/usr/local/lib/node_modules/n8n/node_modules/n8n-editor-ui/dist:ro
+```
 
-1. このリポジトリを clone します。
-2. `node scripts/build.mjs` を実行します。Node.js がないサーバーでは、n8n のイメージで実行できます。
+詳しい手順、動作確認、ロールバックは [scripts/apply-to-vps.md](scripts/apply-to-vps.md) を参照してください。
 
-   ```sh
-   docker run --rm --entrypoint node -u "$(id -u):$(id -g)" \
-     -v "$PWD":/work -w /work docker.io/n8nio/n8n:2.45.4 scripts/build.mjs
-   ```
-
-3. サーバーの n8n の設定に、次の 2 つを追加します。
-
-   ```yaml
-   environment:
-     N8N_DEFAULT_LOCALE: ja
-   volumes:
-     - /path/to/this/repo/editor-ui-ja:/usr/local/lib/node_modules/n8n/node_modules/n8n-editor-ui/dist:ro
-   ```
-
-4. n8n を再起動します。
-
-更新するときは `git pull` → `node scripts/build.mjs` → n8n を再起動、の順に実行します。
+| 環境変数 | 既定値 | 内容 |
+| --- | --- | --- |
+| `N8N_JA_BUILD_DIR` | `/opt/n8n-ja-build` | ビルド作業ディレクトリ |
+| `N8N_JA_DEPLOY_DIR` | `/var/www/n8n/editor-ui-ja` | 成果物の配置先 |
 
 ## n8n のバージョンを上げるとき
 
 editor-ui は n8n 本体とバージョンを合わせる必要があります。
 
-1. Tomatio13/n8n-i18n-japanese に同じバージョンのリリースがあることを確認します。
-2. `scripts/build.mjs` の `N8N_VERSION` と `RELEASE_SHA256` を更新します。ハッシュは次のコマンドで確認できます。
-
-   ```sh
-   gh release view 'n8n@<version>' -R Tomatio13/n8n-i18n-japanese --json assets -q '.assets[].digest'
-   ```
-
-3. `compose.yml`（とサーバーの設定）のイメージのバージョンを合わせます。
-4. `node scripts/build.mjs` を実行します。パッチの置換箇所が見つからない場合はエラーで止まるので、`scripts/patches.mjs` を新しいバージョンに合わせて直します。
+1. `patches/n8n@<version>/ja-locale.patch` を用意します。2.45.4 のパッチがそのまま当たるか、`git apply --check` で確認してください。
+2. `scripts/build-editor-ui.sh <version>` を実行します。
+3. Docker Compose のイメージのバージョンを合わせて再起動します。
 
 ## 補足
 
-- パッチを当てたファイルは、ブラウザのキャッシュを避けるために内容のハッシュで名前を変えます。古い名前は新しいファイルを読み込む中継ファイルとして残します（`editor-ui-ja/.renames.json` に履歴を記録）。
-- 言語の切り替えは、ブラウザの localStorage の `n8n-ui-locale` に保存します。消すとサーバーの既定（`N8N_DEFAULT_LOCALE`）に戻ります。
+- 言語の切り替えは、ブラウザの localStorage の `n8n-ui-locale` に保存します。消すとサーバーの既定に戻ります。
 - ノード名やノードの設定項目は n8n 本体側の定義のため、日本語になりません。
 
 ## ライセンス
 
-- このリポジトリで書いた部分（`scripts/`、`i18n/ja-extra.json` の訳、`compose.yml`、README）は MIT ライセンスです（[LICENSE](LICENSE)）。
-- n8n の文言とコードの権利は n8n GmbH に帰属し、[Sustainable Use License](https://github.com/n8n-io/n8n/blob/master/LICENSE.md) に従います。`i18n/ja-extra.json` は n8n の文言の翻訳、`scripts/patches.mjs` は n8n のコードの一部を置換の目印として含みます。
-- 日本語版 editor-ui は [Tomatio13/n8n-i18n-japanese](https://github.com/Tomatio13/n8n-i18n-japanese) のリリースを利用します。このリポジトリには含めていません。
+- このリポジトリで書いた部分は MIT ライセンスです（[LICENSE](LICENSE)）。
+- n8n は Sustainable Use License と n8n Enterprise License の対象です。n8n 本体、ビルド成果物、依存ライブラリは再配布しないでください。
+- 詳しくは [LICENSE-NOTES.md](LICENSE-NOTES.md) を参照してください。
 - 個人の非商用プロジェクトです。n8n GmbH とは関係ありません。
