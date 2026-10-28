@@ -1,3 +1,16 @@
+# ビルド成果物と n8n のソース（配布しない）
 editor-ui-ja/
+dist/
+node_modules/
+n8n/
+*.tar.gz
+*.log
+
+# 秘密情報
+.env
+.env.*
+!.env.example
+
+# ローカル作業用
 .cache/
 *.bak.*
