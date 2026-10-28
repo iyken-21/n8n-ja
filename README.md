@@ -69,3 +69,10 @@ editor-ui は n8n 本体とバージョンを合わせる必要があります�
 - パッチを当てたファイルは、ブラウザのキャッシュを避けるために内容のハッシュで名前を変えます。古い名前は新しいファイルを読み込む中継ファイルとして残します（`editor-ui-ja/.renames.json` に履歴を記録）。
 - 言語の切り替えは、ブラウザの localStorage の `n8n-ui-locale` に保存します。消すとサーバーの既定（`N8N_DEFAULT_LOCALE`）に戻ります。
 - ノード名やノードの設定項目は n8n 本体側の定義のため、日本語になりません。
+
+## ライセンス
+
+- このリポジトリで書いた部分（`scripts/`、`i18n/ja-extra.json` の訳、`compose.yml`、README）は MIT ライセンスです（[LICENSE](LICENSE)）。
+- n8n の文言とコードの権利は n8n GmbH に帰属し、[Sustainable Use License](https://github.com/n8n-io/n8n/blob/master/LICENSE.md) に従います。`i18n/ja-extra.json` は n8n の文言の翻訳、`scripts/patches.mjs` は n8n のコードの一部を置換の目印として含みます。
+- 日本語版 editor-ui は [Tomatio13/n8n-i18n-japanese](https://github.com/Tomatio13/n8n-i18n-japanese) のリリースを利用します。このリポジトリには含めていません。
+- 個人の非商用プロジェクトです。n8n GmbH とは関係ありません。
